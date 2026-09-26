@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helpdesk Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="glow glow--one"></div>
+    <div class="glow glow--two"></div>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand__logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 11a9 9 0 0 1 18 0v5a3 3 0 0 1-3 3h-1v-7h4"/>
+                    <path d="M3 12h4v7H6a3 3 0 0 1-3-3v-4Z"/>
+                </svg>
+            </div>
+            <div>
+                <div class="brand__title">Helpdesk</div>
+                <div class="brand__subtitle">Service Desk Console</div>
+            </div>
+        </div>
+        <div class="topbar__actions">
+            <span id="api-status" class="api-status">
+                <span class="api-status__dot"></span>
+                <span class="api-status__text">Проверка API…</span>
+            </span>
+            <a class="btn btn--ghost" href="/docs" target="_blank">API Docs</a>
+            <button id="open-create" class="btn btn--primary">
+                <span class="btn__icon">+</span> Новая заявка
+                <kbd>N</kbd>
+            </button>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="stats" id="stats">
+            <button class="stat" data-status="">
+                <span class="stat__label">Всего заявок</span>
+                <span class="stat__value" data-stat="total">—</span>
+                <span class="stat__bar stat__bar--total"></span>
+            </button>
+            <button class="stat" data-status="new">
+                <span class="stat__label">Новые</span>
+                <span class="stat__value" data-stat="new">—</span>
+                <span class="stat__bar stat__bar--new"></span>
+            </button>
+            <button class="stat" data-status="in_progress">
+                <span class="stat__label">В работе</span>
+                <span class="stat__value" data-stat="in_progress">—</span>
+                <span class="stat__bar stat__bar--in_progress"></span>
+            </button>
+            <button class="stat" data-status="closed">
+                <span class="stat__label">Закрыты</span>
+                <span class="stat__value" data-stat="closed">—</span>
+                <span class="stat__bar stat__bar--closed"></span>
+            </button>
+        </section>
+
+        <section class="panel">
+            <div class="panel__header">
+                <div class="tabs" id="status-tabs" role="tablist">
+                    <button class="tab is-active" data-status="">Все</button>
+                    <button class="tab" data-status="new">Новые</button>
+                    <button class="tab" data-status="in_progress">В работе</button>
+                    <button class="tab" data-status="closed">Закрытые</button>
+                </div>
+                <div class="panel__tools">
+                    <label class="search">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="7"/>
+                            <path d="m20 20-3.5-3.5"/>
+                        </svg>
+                        <input id="search" type="search" placeholder="Поиск по заявкам…" maxlength="100" autocomplete="off">
+                        <kbd>/</kbd>
+                    </label>
+                    <select id="sort" class="select" title="Сортировка">
+                        <option value="newest">Сначала новые</option>
+                        <option value="oldest">Сначала старые</option>
+                        <option value="priority">По приоритету</option>
+                    </select>
+                    <button id="refresh" class="btn btn--ghost btn--icon" title="Обновить">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+                            <path d="M21 3v6h-6"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="list-head">
+                <span>Заявка</span>
+                <span>Приоритет</span>
+                <span>Статус</span>
+                <span>Создана</span>
+            </div>
+            <ul id="ticket-list" class="ticket-list"></ul>
+
+            <div id="empty-state" class="empty" hidden>
+                <div class="empty__icon">✓</div>
+                <div class="empty__title">Заявок нет</div>
+                <div class="empty__text">Все инциденты обработаны — или пора создать первый.</div>
+            </div>
+
+            <footer class="pagination">
+                <span id="page-info" class="muted"></span>
+                <div class="pagination__buttons">
+                    <button id="prev-page" class="btn btn--ghost">← Назад</button>
+                    <button id="next-page" class="btn btn--ghost">Вперёд →</button>
+                </div>
+            </footer>
+        </section>
+    </main>
+
+    <div id="overlay" class="overlay" hidden></div>
+
+    <aside id="drawer" class="drawer" aria-hidden="true">
+        <div class="drawer__header">
+            <span id="drawer-id" class="drawer__id"></span>
+            <button class="btn btn--ghost btn--icon" data-close title="Закрыть (Esc)">✕</button>
+        </div>
+        <div class="drawer__body">
+            <h2 id="drawer-title" class="drawer__title"></h2>
+            <div id="drawer-badges" class="drawer__badges"></div>
+
+            <dl class="meta">
+                <div><dt>Клиент</dt><dd id="drawer-email"></dd></div>
+                <div><dt>Создана</dt><dd id="drawer-created"></dd></div>
+                <div><dt>Обновлена</dt><dd id="drawer-updated"></dd></div>
+            </dl>
+
+            <h3 class="section-title">Описание</h3>
+            <p id="drawer-description" class="drawer__description"></p>
+
+            <h3 class="section-title">Действия</h3>
+            <div id="drawer-actions" class="actions"></div>
+
+            <h3 class="section-title">История</h3>
+            <ol id="drawer-timeline" class="timeline"></ol>
+        </div>
+        <div class="drawer__footer">
+            <button id="delete-ticket" class="btn btn--danger">Удалить заявку</button>
+        </div>
+    </aside>
+
+    <div id="modal" class="modal" hidden role="dialog" aria-modal="true">
+        <form id="ticket-form" class="modal__card" novalidate>
+            <div class="modal__header">
+                <h2>Новая заявка</h2>
+                <button type="button" class="btn btn--ghost btn--icon" data-close>✕</button>
+            </div>
+
+            <label class="field">
+                <span class="field__label">Заголовок</span>
+                <input name="title" required minlength="3" maxlength="200" placeholder="Например: не работает VPN">
+            </label>
+            <label class="field">
+                <span class="field__label">Описание</span>
+                <textarea name="description" rows="4" required maxlength="5000" placeholder="Что произошло, когда, какие шаги уже предприняты"></textarea>
+            </label>
+            <label class="field">
+                <span class="field__label">Email клиента</span>
+                <input name="customer_email" type="email" required placeholder="client@company.ru">
+            </label>
+
+            <fieldset class="field">
+                <span class="field__label">Приоритет</span>
+                <div class="priority-picker">
+                    <label><input type="radio" name="priority" value="low"><span class="chip chip--low">Низкий</span></label>
+                    <label><input type="radio" name="priority" value="medium" checked><span class="chip chip--medium">Средний</span></label>
+                    <label><input type="radio" name="priority" value="high"><span class="chip chip--high">Высокий</span></label>
+                    <label><input type="radio" name="priority" value="critical"><span class="chip chip--critical">Критический</span></label>
+                </div>
+            </fieldset>
+
+            <p id="form-error" class="form-error" hidden></p>
+
+            <div class="modal__footer">
+                <button type="button" class="btn btn--ghost" data-close>Отмена</button>
+                <button type="submit" class="btn btn--primary">Создать заявку</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="toasts" class="toasts"></div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
